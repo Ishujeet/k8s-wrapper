@@ -1,0 +1,91 @@
+#! /bin/bash
+
+
+readonly PROGNAME=$(basename $0)
+if [[ ${1} != -* ]]
+then
+    APP="${1}"
+fi
+
+default_namespace="dp"
+namespace="${default_namespace}"
+
+usage="${PROGNAME} <search term> [-h] [-d] [-n] [-a]-- search for Kubernetes Service, display and describe it
+
+where:
+    -h, --help           Show this help text
+    -d, --describe       Describe the Kubernets service
+    -n, --namespace      The Kubernetes namespace where the pods are located (defaults to \"dp\")
+    -a, --all-namesapces All Kubernetes namespaces
+
+examples:
+    # Display service in default namespace, which is \"${default_namespace}\"
+    ${PROGNAME} service-name
+
+    # Display service in given namespace
+    ${PROGNAME} service-name -n namespace
+
+    # Display service in all namespaces
+    ${PROGNAME} service-name -a
+
+    # Describe service in default namespace, which is \"${default_namespace}\"
+    ${PROGNAME} service-name -d
+
+    # Describe service in given namespace
+    ${PROGNAME} service-name -n namespace -d
+
+    # Describe service in given namespace
+    ${PROGNAME} service-name -a -d
+
+    #Note: Make sure you have the selector in with \"app=name\" in your resources."
+
+if [ $# -eq 0 ]; then
+        echo "$usage"
+        exit 1
+fi
+
+
+if [ "$#" -ne 0 ]; then
+        while [ "$#" -gt 0 ]
+        do
+                case "$1" in
+                -h|--help)
+                    echo "$usage"
+                    exit 0
+                    ;;
+                -d|-describe)
+                    describe=true
+                    ;;
+                -n|--namespace)
+                    if [ -z "$2" ]; then
+                        namespace="${default_namespace}"
+                    else
+                        namespace="$2"
+                    fi
+                    ;;
+                -a|--all-namespaces)
+			        all="true"
+                    ;;
+                --)
+                    break
+                    ;;
+                -*)
+                    echo "Invalid option '$1'. Use --help to see the valid options" >&2
+                    exit 1
+                    ;;
+                # an option argument, continue
+                *)  ;;
+                esac
+                shift
+        done
+fi
+if [ "${all}" = true ] && [ "${describe}" = true ]; then
+    namespace=$( kubectl get svc -lapp=${APP} --all-namespaces | awk -F" " 'FNR == 2 {print $1}' )
+    kubectl describe svc -lapp=${APP} -n ${namespace}
+elif [ "${all}" = true ]; then
+    kubectl get svc -lapp=${APP} --all-namespaces
+elif [ "${describe}" = true ]; then
+    kubectl describe svc -lapp=${APP} -n ${namespace}
+else
+    kubectl get svc -lapp=${APP} -n ${namespace}
+fi

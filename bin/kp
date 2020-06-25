@@ -1,0 +1,124 @@
+#! /bin/bash
+
+readonly PROGNAME=$(basename $0)
+if [[ ${1} != -* ]]
+then
+    APP="${1}"
+fi
+
+default_namespace="dp"
+namespace="${default_namespace}"
+
+usage="${PROGNAME} <search term> [-h] [-d] [-n] [-a]-- search Kubernetes Pods, display and describe them
+
+where:
+    -h, --help           Show this help text
+    -d, --describe       Describe the Kubernets Pods created latest
+    -p, --pod            Describe particular pod
+    -n, --namespace      The Kubernetes namespace where the pods are located (defaults to \"dp\")
+    -a, --all-namesapces All Kubernetes namespaces
+
+examples:
+    # Display the pods exists in defualt namespace, which is  \"${default_namespace}\"
+    ${PROGNAME} name
+
+    # Display the pods exists in namespace provided here
+    ${PROGNAME} name -n namespace
+
+    # Display the pods by given name in all namespaces
+    ${PROGNAME} name -a
+
+    # Describe pod which is latest created in default namespace \"${default_namespace}\"
+    ${PROGNAME} name -d
+
+    # Describe pod which is latest created in given namespace
+    ${PROGNAME} name -n namespace -d
+
+    # Describe pod which is latest created in all namespaces
+    ${PROGNAME} name -a -d
+
+    # Describe particular pod provided in default namespace \"${default_namespace}\"
+    ${PROGNAME} name -p pod-name
+    ${PROGNAME} -p pod-name
+
+    # Describe particular pod provided in given namespace
+    ${PROGNAME} name -n namespace -p pod-name
+    ${PROGNAME} -n namespace -p pod-name
+
+    # Describe pod which is latest created in all namespaces
+    ${PROGNAME} name -p pod-name -a 
+    ${PROGNAME} -p pod-name -a 
+
+    #Note: Make sure you have the selector in with \"app=name\" in your resources."
+
+if [ $# -eq 0 ]; then
+        echo "$usage"
+        exit 1
+fi
+
+
+if [ "$#" -ne 0 ]; then
+        while [ "$#" -gt 0 ]
+        do
+                case "$1" in
+                -h|--help)
+                    echo "$usage"
+                    exit 0
+                    ;;
+                -d|-describe)
+                    describe=true
+                    ;;
+                -n|--namespace)
+                    if [ -z "$2" ]; then
+                        namespace="${default_namespace}"
+                    else
+                        namespace="$2"
+                    fi
+                    ;;
+                -a|--all-namespaces)
+                    all="true"
+                    ;;
+                -p|--pod)
+                    if [ -z "$2" ]; then
+                        echo "Invalid option '\"$1\"' usage. POD_NAME must be provided with \"-p POD_NAME\""
+                        exit 0
+                    else
+                        describe=true
+                        POD=$2
+                    fi
+                    ;;
+                --)
+                    break
+                    ;;
+                -*)
+                    echo "Invalid option '$1'. Use --help to see the valid options" >&2
+                    exit 1
+                    ;;
+                # an option argument, continue
+                *)  ;;
+                esac
+            shift
+        done
+fi
+
+if [ "${all}" = true ] && [ "${describe}" = true ] && [ -z "$POD" ]; then
+    namespace=$( kubectl get pods -lapp=${APP} --all-namespaces | awk -F" " 'FNR == 2 {print $1}' )
+    POD=$( kubectl get pods -l app=$APP -n $namespace --sort-by=.metadata.creationTimestamp -o=json | jq -r ".items[-1].metadata.name" )
+    kubectl describe pods $POD -n ${namespace}
+elif [ "${all}" = true ] && [ -n "$POD" ]; then
+    if [ -z "${APP}" ]; then
+        namespace=$( kubectl get pods --all-namespaces | grep "${POD}" | awk -F" " 'FNR=1 {print $1}' )
+    else
+        namespace=$( kubectl get pods -lapp=${APP} --all-namespaces | awk -F" " 'FNR == 2 {print $1}' )
+    fi 
+    kubectl describe pods $POD -n ${namespace}
+elif [ "${all}" = true ]; then
+    kubectl get pod -lapp=${APP} --all-namespaces
+elif [ "${describe}" = true ]; then
+    if [ -z "${POD}" ]; then
+        POD=$( kubectl get pods -l app=$APP -n $namespace --sort-by=.metadata.creationTimestamp -o=json | jq -r ".items[-1].metadata.name" )
+    fi
+    kubectl describe pods $POD -n ${namespace}
+else
+    kubectl get pod -lapp=${APP} -n ${namespace}
+fi
