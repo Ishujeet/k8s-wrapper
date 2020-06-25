@@ -6,10 +6,11 @@ then
     APP="${1}"
 fi
 
-default_namespace="dp"
+# Set this to your working namespace
+default_namespace="default"
 namespace="${default_namespace}"
 
-usage="${PROGNAME} <search term> [-h] [-d] [-n] [-a]-- search Kubernetes Pods, display and describe them
+usage="${PROGNAME} <search term> [-h] [-d] [-p] [-n] [-a]-- search Kubernetes Pods, display and describe them
 
 where:
     -h, --help           Show this help text

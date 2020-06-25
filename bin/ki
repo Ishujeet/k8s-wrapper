@@ -7,7 +7,8 @@ then
     APP="${1}"
 fi
 
-default_namespace="dp"
+# Set this to your working namespace
+default_namespace="defualt"
 namespace="${default_namespace}"
 
 usage="${PROGNAME} <search term> [-h] [-d] [-n] [-a]-- search for Kubernetes Ingress, display and describe it
