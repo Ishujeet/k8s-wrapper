@@ -10,6 +10,7 @@ Scripts can be found in [bin](bin)
 * ks :- This script is used to get Kubernetes Service Resource and describe it
 * kp :- This script is used to get Kubernetes Pods Resource and describe it
 * ki :- This script is used to get Kubernetes Ingress Resource and describe it
+* kl :- Returns snapshot logs for Kubernetes Pods Resource
 ```
 
 ### ks Usage
@@ -120,6 +121,47 @@ examples:
 
     # Describe ingress in all namespaces
     ki ingress-name -a -d
+
+    #Note: Make sure you have the selector in with "app=name" in your resources.
+```
+
+### kl Usage
+
+```shell
+kl <search term> [-h] [-p] [-c] [-f] [-l]-- Print the logs for a container in a pod or specified resource.
+                                                            If the pod has only one container, the container name is optional.
+
+where:
+    -h, --help           Show this help text
+    -p, --pod            Returns logs from specified pod
+    -c, --container      Print the logs of this container, by deafualt it is similar to "app-name"
+    -f, --first          Returns logs from pods which created latest
+    -l, --last           Returns logs from pods which created oldest
+
+examples:
+    # Return snapshot logs from latest created pod from defualt container
+    kl app-name
+
+    # Return snapshot logs from latest created pod from specified container
+    kl app-name -c container-name
+
+    # Return snapshot logs from specified pod
+    kl app-name -p pod-name
+
+    # Return snapshot logs from specified pod and specified container
+    kl app-name -p pod-name -c container-name
+
+    # Return snapshot logs from latest created pod
+    kl app-name -f
+
+    # Return snapshot logs from oldest created pod
+    kl app-name -l
+
+    # Return snapshot logs from latest created pod and specified container
+    kl app-name -c container-name -f
+
+    # Return snapshot logs from oldest created pod and specified container
+    kl app-name -c container-name -l
 
     #Note: Make sure you have the selector in with "app=name" in your resources.
 ```

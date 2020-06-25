@@ -1,0 +1,120 @@
+#! /bin/bash
+
+readonly PROGNAME=$(basename $0)
+if [[ ${1} != -* ]]
+then
+    APP="${1}"
+fi
+
+# Set this to your working namespace
+default_namespace="default"
+namespace="${default_namespace}"
+value=-1
+
+usage="${PROGNAME} <search term> [-h] [-p] [-c] [-f] [-l]-- Print the logs for a container in a pod or specified resource. 
+                                                            If the pod has only one container, the container name is optional.
+
+where:
+    -h, --help           Show this help text
+    -p, --pod            Returns logs from specified pod
+    -c, --container      Print the logs of this container, by deafualt it is similar to \"app-name\"
+    -f, --first          Returns logs from pods which created latest
+    -l, --last           Returns logs from pods which created oldest
+
+examples:
+    # Return snapshot logs from latest created pod from defualt container
+    ${PROGNAME} app-name
+
+    # Return snapshot logs from latest created pod from specified container
+    ${PROGNAME} app-name -c container-name
+
+    # Return snapshot logs from specified pod
+    ${PROGNAME} app-name -p pod-name
+
+    # Return snapshot logs from specified pod and specified container
+    ${PROGNAME} app-name -p pod-name -c container-name
+
+    # Return snapshot logs from latest created pod
+    ${PROGNAME} app-name -f
+
+    # Return snapshot logs from oldest created pod
+    ${PROGNAME} app-name -l
+
+    # Return snapshot logs from latest created pod and specified container
+    ${PROGNAME} app-name -c container-name -f
+
+    # Return snapshot logs from oldest created pod and specified container
+    ${PROGNAME} app-name -c container-name -l
+
+    #Note: Make sure you have the selector in with \"app=name\" in your resources."
+
+if [ $# -eq 0 ]; then
+        echo "$usage"
+        exit 1
+fi
+
+
+if [ "$#" -ne 0 ]; then
+        while [ "$#" -gt 0 ]
+        do
+                case "$1" in
+                -h|--help)
+                    echo "$usage"
+                    exit 0
+                    ;;
+                -p|--pod)
+                    if [ -z "$2" ]; then
+                        echo "Invalid option '\"$1\"' usage. POD_NAME must be provided with \"$1 POD_NAME\""
+                        exit 0
+                    else
+                        POD=$2
+                    fi
+                    ;;
+                -c|--container)
+                    if [ -z "$2" ]; then
+                        echo "Invalid option '\"$1\"' usage. CONTAINER_NAME must be provided with \"$1 CONTAINER_NAME\""
+                        exit 0
+                    else
+                        container=$2
+                    fi
+                    ;;    
+                -f|--first)
+                    value=-1
+                    ;; 
+                -l|--last)
+                    value=0
+                    ;;    
+                --)
+                    break
+                    ;;
+                -*)
+                    echo "Invalid option '$1'. Use --help to see the valid options" >&2
+                    exit 1
+                    ;;
+                # an option argument, continue
+                *)  ;;
+                esac
+            shift
+        done
+fi
+
+
+if [ -n "${container}" ] && [ -n "${POD}" ]; then
+    namespace=$( kubectl get pods -lapp=${APP} --all-namespaces | awk -F" " 'FNR == 2 {print $1}' )
+    echo "listening logs for ${POD} ${container}"
+    kubectl logs ${POD} -c ${container} -n ${namespace}
+elif [ -z "${container}" ] && [ -n "${POD}" ]; then
+    namespace=$( kubectl get pods -lapp=${APP} --all-namespaces | awk -F" " 'FNR == 2 {print $1}' )
+    echo "listening logs for ${POD} ${container}"
+    kubectl logs ${POD} -c ${APP} -n ${namespace}
+elif [ -n "${container}" ] && [ -z "${POD}" ]; then
+    namespace=$( kubectl get pods -lapp=${APP} --all-namespaces | awk -F" " 'FNR == 2 {print $1}' )
+    POD=$( kubectl get pods -l app=${APP} -n ${namespace} --sort-by=.metadata.creationTimestamp -o=json | jq -r ".items[${value}].metadata.name" )
+    echo "listening logs for ${POD} ${container}"
+    kubectl logs ${POD} -c ${container} -n ${namespace}
+else
+    namespace=$( kubectl get pods -lapp=${APP} --all-namespaces | awk -F" " 'FNR == 2 {print $1}' )
+    POD=$( kubectl get pods -l app=${APP} -n ${namespace} --sort-by=.metadata.creationTimestamp -o=json | jq -r ".items[${value}].metadata.name" )
+    echo "listening logs for ${POD} ${container}"
+    kubectl logs ${POD} -c $APP -n ${namespace}
+fi
