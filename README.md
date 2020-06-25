@@ -123,3 +123,11 @@ examples:
 
     #Note: Make sure you have the selector in with "app=name" in your resources.
 ```
+
+### Requirements
+
+Use the package manager [pip](https://pip.pypa.io/en/stable/) to install jq
+
+```
+pip install jq
+```
