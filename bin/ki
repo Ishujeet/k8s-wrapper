@@ -65,7 +65,7 @@ if [ "$#" -ne 0 ]; then
                     fi
                     ;;
                 -a|--all-namespaces)
-		    all="true"
+                    all="true"
                     ;;
                 --)
                     break
