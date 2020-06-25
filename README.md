@@ -1,6 +1,6 @@
 # k8s-wrapper
 
-Small wrapper scripts to around `kubectl` ease working with `Kubernetes Resources`.
+Small wrapper scripts to around `kubectl` to ease working with `Kubernetes Resources`.
 
 ## Usage
 
