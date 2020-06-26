@@ -6,9 +6,6 @@ then
     APP="${1}"
 fi
 
-# Set this to your working namespace
-default_namespace="default"
-namespace="${default_namespace}"
 value=-1
 
 usage="${PROGNAME} <search term> [-h] [-p] [-c] [-f] [-l]-- Print the logs for a container in a pod or specified resource. 
